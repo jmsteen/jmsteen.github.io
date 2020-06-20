@@ -1,3 +1,7 @@
+a {
+  color: #1a5673;
+}
+
 body {
   max-width: 40em;
   margin: 0 auto;
@@ -7,6 +11,15 @@ body {
   font-size: 20px;
   line-height: 30px;
   color: #000;
+}
+
+.essays-list {
+  padding-inline-start: 0;
+}
+
+.essays-list > li {
+  list-style: none;
+  line-height: 2em;
 }
 
 footer {
@@ -36,10 +49,6 @@ h1 {
 
 h2 {
   font-size: 1.3em;
-}
-
-a {
-  color: #1a5673;
 }
 
 #john-steen {
