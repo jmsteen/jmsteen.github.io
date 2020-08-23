@@ -13,6 +13,14 @@ body {
   color: #000;
 }
 
+pre {
+  background: #2d2d2d;
+  padding: 5px 30px;
+  font-size: 0.9em;
+  color: white;
+  overflow: scroll;
+}
+
 .essays-list {
   padding-inline-start: 0;
 }

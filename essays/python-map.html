@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Python Map Performance | JOHN STEEN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="icon" type="image/png" href="../images/js-favicon.png" />
+    <meta
+      property="og:image"
+      content="https://johnsteen.co/images/blog-feature.jpeg"
+    />
+  </head>
+  <body>
+    <header><a href="../index.html" id="john-steen">JOHN STEEN</a></header>
+    <hr />
+    <h1>
+      What's the fastest way to map a list of values in Python?
+    </h1>
+    <p>
+      I was curious what the fastest way is to map a list of values in Python,
+      so I decided to run a little experiment.
+    </p>
+    <p>
+      It turns out that when Elon finally gets to Mars, he decides to create a
+      new temperature scale that betters reflects the colder median temperature
+      there.
+    </p>
+    <p>It's measured in Musk degrees (°M).</p>
+    <p>
+      We have a list of Mars temperature measurements in Fahrenheit, but need to
+      convert all of the temps to Musk to perform a useful analysis for Elon.
+    </p>
+    <p>The formula to convert Fahrenheit to Musk is:</p>
+    <p>°M = (°F + 32) * (9 / 7)</p>
+    <p>
+      We are going to be dealing with a lot of data, so I decided to try several
+      different ways to map our list from °F to °M and then compare the relative
+      performances.
+    </p>
+    <h2>Test data</h2>
+    <p>
+      I randomly generated 1,000 integers in a range of values between -1,000
+      and 1,000, representing Fahrenheit temperatures.
+    </p>
+    <pre><code>
+import random
+
+random_temps = [random.randint(-1000, 1000) for _ in range(1000)]
+    </code></pre>
+
+    <h2>Conversion function</h2>
+    <p>
+      I abstracted the conversion logic into a helper function
+      <code>fahr_to_musk</code> so that we can compare performance with and
+      without function calls.
+    </p>
+    <p>
+      Using this function will increase readability, but we will have to see how
+      it affects execution time.
+    </p>
+    <pre><code>
+def fahr_to_musk(f_temp):
+    return (f_temp + 32) * (9 / 7)
+    </code></pre>
+    <h2>Approach 1 - For loop</h2>
+    <p>
+      Our main goal is to take an input list of values, modify each element in
+      the list with the same logic and then return a new list with the modified
+      values.
+    </p>
+    <p>
+      Arguably, the simplest way to do this is by iterating through the list of
+      values with a for loop, applying our conversion calculation to each one
+      and then returning a new list of the modified values (in Musk):
+    </p>
+    <pre><code>
+def map_for_loop():
+    mapped_temps = []
+
+    for temp in random_temps:
+        musk_temp = (temp + 32) * (9 / 7)
+        mapped_temps.append(musk_temp)
+
+    return mapped_temps
+    </code></pre>
+    <h2>Approach 2 - For loop with function call</h2>
+    <p>
+      It seems like we could improve the readability of our for loop by
+      abstracting the conversion calculation into the helper function
+      <code>fahr_to_musk</code>.
+    </p>
+    <p>
+      This might raise a yellow flag for us since Python tends to have a
+      relatively high overhead for function calls, but let's create the function
+      and then include it in our performance testing to make sure.
+    </p>
+    <pre><code>
+def map_for_loop_fn_call():
+    mapped_temps = []
+
+    for temp in random_temps:
+        musk_temp = fahr_to_musk(temp)
+        mapped_temps.append(musk_temp)
+
+    return mapped_temps
+    </code></pre>
+    <h2>Approach 3 - Built-in map() function</h2>
+    <p>
+      Python's built-in map() function takes in an iterable and a function,
+      applies the function to every element and then returns an iterator with
+      all of the modified elements.
+    </p>
+    <code>map(<i>function, iterable, ...</i>)</code>
+    <p>
+      This seems like a natural choice for what we're wanting to do, so let's
+      include it in our tests.
+    </p>
+    <p>
+      We're passing the function <code>fahr_to_musk</code> to
+      <code>map</code> as the first argument and the list of fahrenheit
+      temperatures as the iterable.
+    </p>
+    <p>
+      Since <code>map</code> returns an iterator and we want a list, we'll need
+      to create a list from the return iterator.
+    </p>
+    <pre><code>
+def map_built_in():
+    mapped_temps = list(map(fahr_to_musk, random_temps))
+    return mapped_temps
+    </code></pre>
+    <h2>Approach 4 - Map built-in with lambda</h2>
+    <p>
+      In lieu of a named function, <code>map()</code> allows us to pass a lambda
+      expression, which is basically just syntactic sugar for an anonymous
+      function.
+    </p>
+    <p>
+      It'll be interesting to see how map with lambdas compares to map with a
+      named function call, so we include it as one of our approaches.
+    </p>
+    <pre><code>
+def map_built_in_lambda():
+    mapped_temps = list(map(lambda t: (t + 32) * (9 / 7), random_temps))
+    return mapped_temps
+    </code></pre>
+    <h2>Approach 5 - List comprehension</h2>
+    <p>
+      List comprehensions are often an intuitive and readable way to create
+      lists from other lists.
+    </p>
+    <p>
+      Similar to the map built-in, they apply specified operations to each
+      element in a list or iterable and return the result as a new list.
+    </p>
+    <p>
+      In our first list comprehension, we specify the conversion operations
+      inline as opposed to a function call:
+    </p>
+    <pre><code>
+def map_list_comprehension():
+    mapped_temps = [((temp + 32) * (9 / 7)) for temp in random_temps]
+    return mapped_temps
+    </code></pre>
+    <h2>Approach 6 - List comprehension with function call</h2>
+    <p>
+      Finally, let's see what it looks like to simplify our conversion
+      calculation in the list comprehension by replacing it with a function
+      call:
+    </p>
+    <pre><code>
+def map_list_comprehension_fn_call():
+    mapped_temps = [fahr_to_musk(temp) for temp in random_temps]
+    return mapped_temps
+    </code></pre>
+    <h2>Testing</h2>
+    <p>Finally, it's time to test out our various map approaches.</p>
+    <p>
+      We'll use Python's <code>timeit</code> library to test each map function
+      one million times with a set of 1,000 random int arguments.
+    </p>
+    <p>Here is the full code that we will use:</p>
+    <pre><code>
+import timeit
+import random
+
+random_temps = [random.randint(-1000, 1000) for _ in range(1000)]
+
+def fahr_to_musk(f_temp):
+    return (f_temp + 32) * (9 / 7)
+
+def map_for_loop():
+    mapped_temps = []
+
+    for temp in random_temps:
+        musk_temp = (temp + 32) * (9 / 7)
+        mapped_temps.append(musk_temp)
+    
+    return mapped_temps
+
+def map_for_loop_fn_call():
+    mapped_temps = []
+
+    for temp in random_temps:
+        musk_temp = fahr_to_musk(temp)
+        mapped_temps.append(musk_temp)
+    
+    return mapped_temps
+
+def map_built_in():
+    mapped_temps = list(map(fahr_to_musk, random_temps))
+    return mapped_temps
+
+def map_built_in_lambda():
+    mapped_temps = list(map(lambda t: (t + 32) * (9 / 7), random_temps))
+    return mapped_temps
+
+def map_list_comprehension():
+    mapped_temps = [((temp + 32) * (9 / 7)) for temp in random_temps]
+    return mapped_temps
+
+def map_list_comprehension_fn_call():
+    mapped_temps = [fahr_to_musk(temp) for temp in random_temps]
+    return mapped_temps
+
+t_map_for_loop = timeit.timeit(map_for_loop)
+t_map_for_loop_fn_call = timeit.timeit(map_for_loop_fn_call)
+t_map_built_in = timeit.timeit(map_built_in)
+t_map_built_in_lambda = timeit.timeit(map_built_in_lambda)
+t_map_list_comprehension = timeit.timeit(map_list_comprehension)
+t_map_list_comprehension_fn_call = timeit.timeit(map_list_comprehension_fn_call)
+
+print('\n')
+print('Execution time (s) with 1,000,000 iterations')
+print('------------------------------------')
+print(f'map_for_loop: {t_map_for_loop}s')
+print(f'map_for_loop_fn_call: {t_map_for_loop_fn_call}s')
+print(f'map_built_in: {t_map_built_in}s')
+print(f'map_built_in_lambda: {t_map_built_in_lambda}s')
+print(f'map_list_comprehension: {t_map_list_comprehension}s')
+print(f'map_list_comprehension_fn_call: {t_map_list_comprehension_fn_call}s')
+    </code></pre>
+    <h2>Results</h2>
+    <p>
+      After running each of our map functions one million times, here are the
+      results:
+    </p>
+    <pre><code>
+Execution time (s) with 1,000,000 iterations
+------------------------------------
+map_for_loop: 120.05264791500001s
+map_for_loop_fn_call: 185.766175365s
+map_built_in: 111.13615633700005s
+map_built_in_lambda: 113.82378142899995s
+map_list_comprehension: 80.34981999499996s
+map_list_comprehension_fn_call: 143.94168193300004s
+
+    </code></pre>
+    <p>Interesting!</p>
+    <p>
+      First of all, notice how much faster the
+      <code>map_list_comprehension</code> approach is compared to all others.
+    </p>
+    <p>
+      It beats the next fastest approach (<code>map_built_in</code>) by ~31
+      seconds! And it's more than twice as fast as
+      <code>map_for_loop_fn_call</code>.
+    </p>
+    <p>
+      Why is it so much faster? Mainly, since
+      <i>we're not making any function calls.</i> Function call overhead can
+      become very costly over time as we see with these other functions, and we
+      are able to significantly reduce execution time by performing all
+      operations inline in this case.
+    </p>
+    <p>
+      Notice that the next performant approaches are
+      <code>map_built_in</code> and <code>map_built_in_lambda</code>.
+    </p>
+    <p>
+      The execution times for these approaches are pretty much equivalent. This
+      makes sense, because they are both applying a function to every element in
+      the list. An anonymous lambda function and the named function seem to
+      generate comparable overheads.
+    </p>
+    <p>
+      This suggests that it's up to the developer on whether a lambda or named
+      function makes more sense from a readability or maintainability
+      perspective.
+    </p>
+    <p>
+      Another interesting observation is how much worse the list comprehension
+      performs when include a function call vs. having the operations inline
+      (almost twice as bad).
+    </p>
+    <p>
+      If I was optimizing for performance and debating between a named function
+      in a list comprehension vs. a named function in the built-in map function,
+      I'd choose the map function any day of the week given these results.
+    </p>
+    <p>
+      The for loop approach without a function call had "okay" performance, but
+      I don't see a reason to use this approach given how readable and
+      performant list comprehensions and built-in map approaches are.
+    </p>
+    <p>
+      I <i>definitely</i> would not use a for loop that calls a function for
+      every element when mapping. This by far had the worst performance, lagging
+      43 seconds behind the next worst approach.
+    </p>
+    <h2>Final thoughts</h2>
+    <p>
+      The major tradeoff when mapping elements to a new list is readability vs.
+      performance.
+    </p>
+    <p>
+      If I was performing simple operations across a reasonable number of
+      elements, I would choose list comprehensions with inline operations
+      because they are both readable and performant.
+    </p>
+    <p>
+      If I wanted to further improve readability and abstract the function logic
+      into an external function, I would probably use the built-in
+      <code>map</code> function since it strikes a decent balance between both
+      goals.
+    </p>
+    <p>
+      For further experimentation, I'd be interested to see how using bit
+      operations would affect the performance, as well as how the relative
+      execution times are affected by a larger number of input elements.
+    </p>
+    <p>
+      Either way, the main takeaway is to experiment and test. This way, we can
+      help Elon with his mission of making humans a multi-planetary species, one
+      Musk degree at a time.
+    </p>
+    <section>
+      <h2>Join my private email list</h2>
+      <p>
+        To get future posts in your inbox, sign up for my private email list
+        here.
+      </p>
+      <form
+        method="post"
+        action="https://sendfox.com/form/1kgjvj/368ooe"
+        class="sendfox-form"
+        id="368ooe"
+        data-async="true"
+      >
+        <p>
+          <input
+            type="text"
+            placeholder="First Name"
+            name="first_name"
+            required
+          />
+        </p>
+        <p>
+          <input
+            type="text"
+            placeholder="Last Name"
+            name="last_name"
+            required
+          />
+        </p>
+        <p>
+          <input type="email" placeholder="Email" name="email" required />
+        </p>
+        <!-- no botz please -->
+        <div style="position: absolute; left: -5000px;" aria-hidden="true">
+          <input
+            type="text"
+            name="a_password"
+            tabindex="-1"
+            value=""
+            autocomplete="off"
+          />
+        </div>
+        <p><button type="submit">Submit</button></p>
+      </form>
+      <script src="https://sendfox.com/js/form.js"></script>
+    </section>
+  </body>
+  <footer>
+    <p>© 2020 John Steen</p>
+  </footer>
+</html>
